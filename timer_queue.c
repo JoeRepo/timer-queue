@@ -57,17 +57,28 @@ bool timer_queue_add(timer_ticks_t ticks, void *cb(), bool single_shot, timer_qu
 					}
 					// Otherwise we need to find where this new node belongs in the list
 					else {
-						new_node->ticks = ticks;
+						// We already have the ticks for the head, start at the next node and iterate through until we find the first node with more ticks than our new 
+						for (p_list = timer_queue_head->next; (p_list != NULL); p_list = p_list->next) {
+							if ((p_list->ticks + ticks_elapsed) > ticks) {
+								break;
+							}
 
-						// We already have the ticks for the head, start at the next node and iterate through until we find the first node with more ticks than our new node
-						for (p_list = timer_queue_head->next; (p_list != NULL) && (ticks_elapsed < ticks); p_list = p_list->next) {
 							ticks_elapsed += p_list->ticks;
 
 							prev = p_list;
 						}
-						while (ticks > ticks_left) {
+						
+						// decrement the new node by the amount of ticks that have passed
+						new_node->ticks = (ticks - ticks_elapsed);
 
+						// decrement the time of the other nodes
+						for (p_list; p_list != NULL; p_list = p_list->next) {
+							p_list->ticks -= ticks;
 						}
+
+						// We found out where to put the new node, insert the new node
+						prev->next = new_node;
+						new_node->next = p_list;
 					}
 
 				}
