@@ -79,6 +79,8 @@ bool timer_queue_add(timer_ticks_t ticks, void *cb(), bool single_shot, timer_qu
 						// We found out where to put the new node, insert the new node
 						prev->next = new_node;
 						new_node->next = p_list;
+
+						retval = true;
 					}
 
 				}
