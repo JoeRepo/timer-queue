@@ -6,11 +6,48 @@ struct dll_node_t timer_queue_memory[TIMER_QUEUE_MEMORY_SIZE];
 struct dll_node_t *timer_queue_head;
 size_t curr_queue_memory_size = 0;
 size_t p_next_empty_mode = 0;
+timer_queue_handle_t curr_handle;
+timer_queue_callback_t *curr_callback;
+bool timer_queue_fired = false;
 
 bool timer_start(void)
 {
 	return true;
 }
+
+// NOTE: if memory allocation and freeing is done on the heap, this should be done outside of the ISR
+// NOTE: The callback is not called in the ISR.  It should be called outside of the ISR.
+// We do not know what the callback does and it is much safer to call it outside of the interrupt context
+void timer_queue_isr(void)
+{
+	struct dll_node_t *temp;
+	// Start counting again right away
+	TIMER_CLEAR_INTERRUPT();
+	TIMER_RESET_COUNT();
+
+	// Update the global variables
+	timer_queue_fired = true;
+	curr_callback = timer_queue_head->callback;
+	curr_handle = timer_queue_head->handle;
+
+	// If we don't re-add this timer, just move down the list and free the current node
+	temp = timer_queue_head;
+	timer_queue_head = timer_queue_head->next;
+
+	if (timer_queue_head->single_shot) {
+		if (timer_queue_head) {
+			TIMER_SET_THRESHOLD(timer_queue_head->ticks);
+		}
+	}
+	// Otherwise, we need to add the node that just fired back into the queue
+	else {
+		timer_queue_add(temp->ticks, temp->callback, false, temp->handle);
+		TIMER_SET_THRESHOLD(timer_queue_head->ticks);
+	}
+
+	free_list_free(temp);
+}
+
 
 bool timer_queue_add(timer_ticks_t ticks, void *cb(), bool single_shot, timer_queue_handle_t handle)
 {
@@ -28,6 +65,7 @@ bool timer_queue_add(timer_ticks_t ticks, void *cb(), bool single_shot, timer_qu
 			if (new_node) {
 				new_node->callback = cb;
 				new_node->single_shot = single_shot;
+				new_node->handle = handle;
 
 				// If we have a timer queue to go through, find out how many ticks have elapsed and go through the queue to find out where we put the timer
 				if (timer_queue_head) {
