@@ -111,7 +111,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="doubly_linked_list.c" />
+    <ClCompile Include="free_list.c" />
+    <ClCompile Include="main.c" />
+    <ClCompile Include="timer_queue.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="free_list.h" />
+    <ClInclude Include="timer_queue.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

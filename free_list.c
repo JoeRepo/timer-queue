@@ -12,16 +12,16 @@ void free_list_init(struct free_list_node_t *memory, struct free_list_node_t **h
 
 	for (i = 0; i < num_nodes; ++i) {
 		memory[i].node = &nodes[i];
-		if (num_nodes + 1 == i) {
-			memory[i].next = &memory[i + 1];
-		}
-		else {
+		if (num_nodes - 1 == i) {
 			memory[i].next = NULL;
 			free_list_tail = &memory[i];
 		}
+		else {
+			memory[i].next = &memory[i + 1];
+		}
 	}
 
-	*head = nodes;
+	*head = memory;
 }
 
 free_list_memory_t *free_list_malloc(void)
@@ -50,17 +50,15 @@ bool free_list_free(free_list_memory_t *memory)
 		for (i = 0; i < ARRAY_SIZE(free_list_memory); ++i) {
 			// we found the node to free
 			if (free_list_memory[i].node == memory) {
-				// Add the free node to the end of the list
-				if (free_list_tail) {
-					free_list_tail->next = &free_list_memory[i];
-				}
-				else {
-					free_list_tail = &free_list_memory[i];
-				}
-
-				// if we have no head, make this the head
+				// If there's no head, reinitialize the free list
 				if (!free_list_head) {
 					free_list_head = &free_list_memory[i];
+					free_list_tail = free_list_head;
+				}
+				// otherwise add the free node to the end of the list
+				else {
+					free_list_tail->next = &free_list_memory[i];
+					free_list_tail = free_list_tail->next;
 				}
 
 				return true;
